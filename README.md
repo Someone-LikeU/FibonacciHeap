@@ -1,6 +1,8 @@
 # FibonacciHeap
 斐波那契堆Java实现，后续可能添加python和C++实现，
-参考链接https://www.programiz.com/dsa/fibonacci-heap#google_vignette
+参考链接
+https://www.programiz.com/dsa/fibonacci-heap#google_vignette
+https://www.youtube.com/watch?v=6JxvKfSV9Ns
 
 原链接中实现有较严重bug，修复以下问题：
 1. 记录堆中节点数量的属性n更新过程中变化情况不对，例如堆为空时n可能不为0.
