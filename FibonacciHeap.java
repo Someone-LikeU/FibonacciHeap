@@ -1,4 +1,14 @@
+import java.util.ArrayDeque;
+import java.util.HashSet;
+import java.util.Queue;
+import java.util.Set;
 
+
+/**
+ * 斐波那契堆，节点类
+ * @author peterjzhou
+ * @contact peterjzhou@qq.com
+ */
 class FibNode{
     private FibNode parent;
     private FibNode child;
@@ -81,13 +91,36 @@ class FibNode{
     }
 }
 
-
+/**
+ * 斐波那契堆类
+ * @author peterjzhou
+ * @contact peterjzhou@qq.com
+ */
 public class FibonacciHeap {
+    /**
+     * 指向堆中最小值节点，即整个堆的根节点
+     */
     FibNode min;
+    /**
+     * 记录堆中元素数量
+     */
     int n;
+    /**
+     * 跟踪模式，用于调试，可视情况使用
+     */
     boolean trace;
+    /**
+     * 保存查找的结果节点
+     */
     FibNode found;
 
+    /**
+     * 调整堆结构时的常量
+     *
+     */
+    private static final double PHI = (1 + Math.sqrt(5)) / 2;
+
+    // getters and setters
     public boolean getTrace(){
         return this.trace;
     }
@@ -96,13 +129,25 @@ public class FibonacciHeap {
         this.trace = trace;
     }
 
+    public int getN() {
+        return n;
+    }
+
+    /**
+     * 构造方法
+     */
     public FibonacciHeap(){
         this.min = null;
         this.n = 0;
         this.trace = false;
     }
 
+    /**
+     * 插入一个对节点，私有
+     * @param x FibNode
+     */
     private void insert(FibNode x){
+        // this.min为空，堆空
         if(this.min == null) {
             this.min = x;
             x.setLeft(this.min);
@@ -121,12 +166,23 @@ public class FibonacciHeap {
     }
 
     // 插入一个值为key的节点
+
+    /**
+     * 插入值为key的节点，入口方法，公有
+     * @param key   插入值key
+     */
     public void insert(int key){
         FibNode x = new FibNode(key);
         this.insert(x);
+        // 每次插入可能会破坏堆结构，要调用一次consolidate方法
+        // insert会递归调用自己，所以不能放到insert方法里
+        this.consolidate();
     }
 
-    private void display(){
+    /**
+     * 结构化展示
+     */
+    public void display(){
         display(this.min);
         System.out.println();
     }
@@ -151,6 +207,12 @@ public class FibonacciHeap {
         }
     }
 
+    /**
+     * 合并两个斐波那契堆，把1和2合并为3
+     * @param H1    堆1
+     * @param H2    堆2
+     * @param H3    堆3
+     */
     // 合并两个fib heap
     public static void mergeHeap(FibonacciHeap H1,
                                  FibonacciHeap H2,
@@ -173,11 +235,19 @@ public class FibonacciHeap {
         H3.n = H1.n + H2.n;
     }
 
-    // 获得最小值
+
+    /**
+     * 查找最小值，即查看堆顶元素
+     * @return  堆顶元素
+     */
     public int findMin(){
         return this.min.getKey();
     }
 
+    /**
+     * 打印一个节点的信息
+     * @param x 节点x
+     */
     private void displayNode(FibNode x){
         System.out.println("right:" + ((x.getRight() == null) ? "null" : x.getRight().getKey()));
         System.out.println("left:" + ((x.getLeft() == null) ? "null" : x.getLeft().getKey()));
@@ -187,23 +257,34 @@ public class FibonacciHeap {
     }
 
     // 从堆中pop出最小值
+
+    /**
+     * 提取出堆中最小值，即堆顶
+     * @return
+     */
     public int extractMin(){
         FibNode z = this.min;
+        // min指针不为空，堆中有元素
         if(z != null){
+            // 获取堆顶的子节点，把所有子节点重新插入到堆中
             FibNode c = z.getChild();
             FibNode k = c, temp;
             if(c != null){
                 do{
                     temp = c.getRight();
                     insert(c);
+                    // insert内部会把n+1，此处调节结构，不是真的加节点，所以n--
+                    this.n--;
                     c.setParent(null);
                     c = temp;
                 }while(c != null && c != k);
             }
+            // 放出根节点
             z.getLeft().setRight(z.getRight());
             z.getRight().setLeft(z.getLeft());
             z.setChild(null);
 
+            // 放出后z还等于z的right，说明根节点时唯一的节点
             if(z == z.getRight()){
                 this.min = null;
             }
@@ -213,18 +294,23 @@ public class FibonacciHeap {
                 this.consolidate();
             }
             this.n--;
+            z.setLeft(null);
+            z.setRight(null);
             return z.getKey();
         }
+        // 堆为空，返回一个int类型最大值
         else{
             return Integer.MAX_VALUE;
         }
     }
 
 
-    // 调整堆结构
+    /**
+     * 调整堆结构
+     */
     public void consolidate(){
-        double phi = (1 + Math.sqrt(5)) / 2;
-        int Dofn = (int) (Math.log(this.n) / Math.log(phi));
+        int Dofn = (int) (Math.log(this.n) / Math.log(PHI));
+//        int Dofn = this.n; // 或者this.n,只不过更浪费空间
         // 记录二项树度数的数组
         FibNode[] A = new FibNode[Dofn + 1];
         for(int i = 0; i <= Dofn; i++){
@@ -232,18 +318,21 @@ public class FibonacciHeap {
         }
         FibNode w = this.min;
         if(w != null){
+            // 标记遍历根节点是否结束
             FibNode check = this.min;
             do{
                 FibNode x = w;
                 int d = x.getDegree();
-                while(A[d] != null){
+                while(A[d] != null && A[d] != x){
                     FibNode y = A[d];
+                    // 保证y指向的节点值比x的大
                     if(x.getKey() > y.getKey()){
                         FibNode temp = x;
                         x = y;
                         y = temp;
                         w = x;
                     }
+                    // 把y接到x下面
                     FibHeapLink(y, x);
                     check = x;
                     A[d] = null;
@@ -252,24 +341,35 @@ public class FibonacciHeap {
                 A[d] = x;
                 w = w.getRight();
             }while(w != null && w != check);
-
+            // 先置空根节点，重新插入堆中
             this.min = null;
             for(int i = 0; i <= Dofn; ++i){
                 if(A[i] != null){
                     insert(A[i]);
+                    this.n--;
                 }
             }
         }
     }
 
-    // 将y节点链接到x节点上
+
+    /**
+     * 将y子树链接到x节点上
+     * @param y 子树y
+     * @param x 节点x
+     */
     private void FibHeapLink(FibNode y, FibNode x){
+        // 可能存在传进来的x和y相同的情况
+        if(x == y){
+            return  ;
+        }
         // 把y的独立出来
         y.getLeft().setRight(y.getRight());
         y.getRight().setLeft(y.getLeft());
 
         // 把y链接到x的孩子链表上
         FibNode p = x.getChild();
+        // x没有子节点，y作为x的第一个子节点
         if(p == null){
             y.setRight(y);
             y.setLeft(y);
@@ -286,7 +386,12 @@ public class FibonacciHeap {
         y.setMark(false);
     }
 
-    // 在节点中查询key，递归
+
+    /**
+     * 递归查询key所在节点，私有
+     * @param key   查找值
+     * @param c     起点节点，通常是this.min，即整个堆的根节点
+     */
     private void find(int key, FibNode c){
         if(this.found != null || c == null){
             return;
@@ -296,6 +401,7 @@ public class FibonacciHeap {
             do{
                 if(key == temp.getKey()){
                     this.found = temp;
+                    return;
                 }
                 else{
                     FibNode k = temp.getChild();
@@ -307,18 +413,46 @@ public class FibonacciHeap {
         }
     }
 
+
     // 在堆中查询key，从最小值开始
+
+    /**
+     * 查找值为k的入口方法
+     * @param k 待查找值k
+     * @return  查找节点found
+     */
     public FibNode find(int k){
         this.found = null;
         find(k, this.min);
         return this.found;
     }
 
+    /**
+     * 迭代方式查询
+     * @param k 查询关键字
+     * @return  found节点
+     */
+    public FibNode findIter(int k){
+        this.found = null;
+        findValue(k, this.min);
+        return this.found;
+    }
+
+    /**
+     * 将堆中某值k减小到newVal，即改变大小，入口方法
+     * @param key       原值
+     * @param newVal    新值
+     */
     public void decreaseKey(int key, int newVal){
         FibNode x = find(key);
         decreaseKey(x, newVal);
     }
 
+    /**
+     * 改变大小，私有方法
+     * @param x 节点
+     * @param k 新值
+     */
     private void decreaseKey(FibNode x, int k){
         // 新值比原值大，忽略这个操作
         if (k > x.getKey()){
@@ -327,7 +461,9 @@ public class FibonacciHeap {
         x.setKey(k);
         FibNode y = x.getParent();
         if(y != null && x.getKey() < y.getKey()){
+            // 设置新值后，子节点值可能比父节点大，违反堆的性质，进行剪枝
             cut(x, y);
+            // 级联剪枝y
             cascadingCut(y);
         }
         if(x.getKey() < this.min.getKey()){
@@ -336,18 +472,34 @@ public class FibonacciHeap {
     }
 
     // 树的剪枝操作,cut
+
+    /**
+     * 剪枝
+     * @param x 子节点
+     * @param y x的父节点
+     */
     private void cut(FibNode x, FibNode y){
+        y.setDegree(y.getDegree() - 1);
+        // y度为0，则无子节点，设为null，否则应该设为x的右节点
+        y.setChild(y.getDegree() == 0 ? null : x.getRight());
+        // 独立出x
         x.getRight().setLeft(x.getLeft());
         x.getLeft().setRight(x.getRight());
-        y.setDegree(y.getDegree() - 1);
         x.setRight(null);
         x.setLeft(null);
+        // 重新插入x
         insert(x);
+        this.n--;
         x.setParent(null);
         x.setMark(false);
     }
 
     // 递归剪枝操作,cascading cut
+
+    /**
+     * 级联剪枝y
+     * @param y 某父节点
+     */
     private void cascadingCut(FibNode y){
         FibNode z = y.getParent();
         if(z != null){
@@ -362,34 +514,57 @@ public class FibonacciHeap {
     }
 
     // 删除节点
+
+    /**
+     * 删除节点，通过设置该节点为最小值，然后pop掉根节点实现
+     * @param x 待删除节点
+     */
     public void delete(FibNode x){
         decreaseKey(x, Integer.MIN_VALUE);
+        // 提取最小值，不接收返回值
         extractMin();
     }
 
-
-    public static void main(String[] args) {
-        FibonacciHeap obj = new FibonacciHeap();
-        obj.insert(7);
-        obj.insert(26);
-        obj.insert(30);
-        obj.insert(39);
-        obj.insert(10);
-        obj.insert(1);
-        obj.display();
-
-        System.out.println(obj.findMin());
-        System.out.println(obj.extractMin());
-        obj.display();
-        System.out.println(obj.extractMin());
-        obj.display();
-        System.out.println(obj.extractMin());
-        obj.display();
-        System.out.println(obj.extractMin());
-        obj.display();
-        System.out.println(obj.extractMin());
-        obj.display();
-        
+    /**
+     * 迭代的查询值k是否在堆中，起点通常为根节点
+     * @param k 查询值
+     * @param c 起点节点
+     */
+    private void findValue(int k, FibNode c){
+        if(c == null){
+            return;
+        }
+        // 用一个简单的队列，遍历时类似层序遍历，优先一个根节点的子节点
+        Queue<FibNode> que = new ArrayDeque<>();
+        que.add(c);
+        Set<FibNode> seen = new HashSet<>();
+        FibNode current = null;
+        while(!que.isEmpty() && seen.size() <= this.n){
+            current = que.poll();
+            if(current == null || seen.contains(current)){
+                continue;
+            }
+            seen.add(current);
+            if(current.getKey() == k){
+                // 找到值，通过found属性返回
+                this.found = current;
+                break;
+            }
+            FibNode child = current.getChild();
+            // 遍历子节点
+            if(child != null){
+                que.add(child);
+                FibNode nextSib = child.getRight();
+                while(nextSib != child){
+                    que.add(nextSib);
+                    nextSib = nextSib.getRight();
+                }
+            }
+            FibNode right = current.getRight();
+            if(!seen.contains(right)){
+                que.add(right);
+            }
+        }
     }
 }
 
