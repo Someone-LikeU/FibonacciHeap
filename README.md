@@ -1,5 +1,6 @@
 # FibonacciHeap
-斐波那契堆Java实现，后续可能添加python和C++实现，
+斐波那契堆Java实现，
+py实现和cpp实现由ChatGPT翻译Java代码得到，慎用
 参考链接
 https://www.programiz.com/dsa/fibonacci-heap#google_vignette
 https://www.youtube.com/watch?v=6JxvKfSV9Ns
